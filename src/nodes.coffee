@@ -297,6 +297,14 @@ exports.Block = class Block extends Base
     return nodes[0] if nodes.length is 1 and nodes[0] instanceof Block
     new Block nodes
 
+  # TODO(klimt)
+  @awaitThen: (promise, block) ->
+    continuation = new Code [], block, 'boundfunc'
+    thenLiteral = new Literal "then"
+    dotThen = new Access thenLiteral
+    call = new Call (new Value promise, [dotThen]), [continuation]
+    Block.wrap([call])
+
 #### Literal
 
 # Literals are static values that can be passed through directly into

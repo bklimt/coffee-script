@@ -35,7 +35,7 @@ o = (patternString, action, options) ->
   return [patternString, '$$ = $1;', options] unless action
   action = if match = unwrap.exec action then match[1] else "(#{action}())"
   action = action.replace /\bnew /g, '$&yy.'
-  action = action.replace /\b(?:Block\.wrap|extend)\b/g, 'yy.$&'
+  action = action.replace /\b(?:Block\.wrap|Block\.awaitThen|extend)\b/g, 'yy.$&'
   [patternString, "$$ = #{action};", options]
 
 # Grammatical Rules
@@ -66,6 +66,13 @@ grammar =
     o 'Line',                                   -> Block.wrap [$1]
     o 'Body TERMINATOR Line',                   -> $1.push $3
     o 'Body TERMINATOR'
+  ]
+
+  # TODO(klimt)
+  AwaitBody: [
+    o 'Body',                                   -> $1
+    o 'AwaitExpression TERMINATOR AwaitBody',   -> Block.awaitThen $1, $3
+    o 'Body TERMINATOR AwaitBody',              -> $1.push $3
   ]
 
   # Block and statements, which make up a line in a body.
@@ -100,12 +107,22 @@ grammar =
     o 'Throw'
   ]
 
+  # Any expression preceded by the await keyword.
+  AwaitExpression: [
+    o 'AWAIT Expression',                       -> $2
+  ]
+
   # An indented block of expressions. Note that the [Rewriter](rewriter.html)
   # will convert some postfix forms into blocks for us, by adjusting the
   # token stream.
   Block: [
     o 'INDENT OUTDENT',                         -> new Block
     o 'INDENT Body OUTDENT',                    -> $2
+  ]
+
+  # TODO(klimt)
+  AwaitBlock: [
+    o 'INDENT AwaitBody OUTDENT',               -> $2
   ]
 
   # A literal identifier, a variable name or property.
@@ -172,6 +189,8 @@ grammar =
   Code: [
     o 'PARAM_START ParamList PARAM_END FuncGlyph Block', -> new Code $2, $5, $4
     o 'FuncGlyph Block',                        -> new Code [], $2, $1
+    o 'ASYNC PARAM_START ParamList PARAM_END FuncGlyph Block', -> new Code $3, $6, $5
+    o 'ASYNC FuncGlyph AwaitBlock',             -> new Code [], $3, $2
   ]
 
   # CoffeeScript has two different symbols for functions. `->` is for ordinary
