@@ -35,7 +35,7 @@ o = (patternString, action, options) ->
   return [patternString, '$$ = $1;', options] unless action
   action = if match = unwrap.exec action then match[1] else "(#{action}())"
   action = action.replace /\bnew /g, '$&yy.'
-  action = action.replace /\b(?:Block\.wrap|Block\.awaitThen|extend)\b/g, 'yy.$&'
+  action = action.replace /\b(?:Block\.wrap|extend)\b/g, 'yy.$&'
   [patternString, "$$ = #{action};", options]
 
 # Grammatical Rules
@@ -71,7 +71,7 @@ grammar =
   # TODO(klimt)
   AwaitBody: [
     o 'Body',                                   -> $1
-    o 'AwaitExpression TERMINATOR AwaitBody',   -> Block.awaitThen $1, $3
+    o 'AwaitExpression TERMINATOR AwaitBody',   -> $1.push($3).block()
     o 'Body TERMINATOR AwaitBody',              -> $1.push $3
   ]
 
@@ -109,7 +109,8 @@ grammar =
 
   # Any expression preceded by the await keyword.
   AwaitExpression: [
-    o 'AWAIT Expression',                       -> $2
+    o 'AWAIT Expression',                       -> new Await $2
+    o 'AwaitAssign',                            -> $1
   ]
 
   # An indented block of expressions. Note that the [Rewriter](rewriter.html)
@@ -154,6 +155,13 @@ grammar =
     o 'Assignable = Expression',                -> new Assign $1, $3
     o 'Assignable = TERMINATOR Expression',     -> new Assign $1, $4
     o 'Assignable = INDENT Expression OUTDENT', -> new Assign $1, $4
+  ]
+
+  # Assignment of a variable, property, or index to a value.
+  AwaitAssign: [
+    o 'Assignable = AwaitExpression',                -> $3.push(new Assign $1, new Literal('__asyncResult'))
+    # o 'Assignable = TERMINATOR AwaitExpression',     -> new Assign $1, $4
+    # o 'Assignable = INDENT AwaitExpression OUTDENT', -> new Assign $1, $4
   ]
 
   # Assignment when it happens within an object literal. The difference from

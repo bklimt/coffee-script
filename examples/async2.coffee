@@ -6,5 +6,11 @@ f = async ->
   await taskThreeAsync()
   console.log s
 
-f()
+g = async ->
+  x = await f()
+  console.log x
 
+h = async ->
+  y = 1
+  y = await g()
+  console.log y

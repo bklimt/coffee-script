@@ -297,14 +297,6 @@ exports.Block = class Block extends Base
     return nodes[0] if nodes.length is 1 and nodes[0] instanceof Block
     new Block nodes
 
-  # TODO(klimt)
-  @awaitThen: (promise, block) ->
-    continuation = new Code [], block, 'boundfunc'
-    thenLiteral = new Literal "then"
-    dotThen = new Access thenLiteral
-    call = new Call (new Value promise, [dotThen]), [continuation]
-    Block.wrap([call])
-
 #### Literal
 
 # Literals are static values that can be passed through directly into
@@ -1160,6 +1152,36 @@ exports.Assign = class Assign extends Base
     [valDef, valRef] = @value.cache o, LEVEL_LIST
     code = "[].splice.apply(#{name}, [#{fromDecl}, #{to}].concat(#{valDef})), #{valRef}"
     if o.level > LEVEL_TOP then "(#{code})" else code
+
+#### Await
+
+# TODO(klimt)
+exports.Await = class Await extends Base
+  constructor: (promise) ->
+    @promise = promise
+    @continuation = new Block
+
+  children: ['promise', 'continuation']
+
+  isStatement: -> false
+
+  jumps: NO
+
+  compileNode: (o) ->
+    undefined
+
+  block: ->
+    asyncResult = [new Param new Literal "__asyncResult"]
+    continuationCode = new Code asyncResult, @continuation, 'boundfunc'
+    thenLiteral = new Literal "then"
+    dotThen = new Access thenLiteral
+    call = new Call (new Value @promise, [dotThen]), [continuationCode]
+    Block.wrap([call])
+
+  push: (block) ->
+    @continuation.push(block)
+    this
+
 
 #### Code
 
