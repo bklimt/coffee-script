@@ -1153,13 +1153,37 @@ exports.Assign = class Assign extends Base
     code = "[].splice.apply(#{name}, [#{fromDecl}, #{to}].concat(#{valDef})), #{valRef}"
     if o.level > LEVEL_TOP then "(#{code})" else code
 
-#### Await
+#### AwaitExpression
 
 # TODO(klimt)
-exports.Await = class Await extends Base
+exports.AwaitExpression = class AwaitExpression extends Base
   constructor: (promise) ->
     @promise = promise
-    @continuation = new Block
+    @expression = new Value new Literal "__asyncResult"
+
+  children: ['promise', 'continuation']
+
+  isStatement: -> false
+
+  jumps: NO
+
+  compileNode: (o) ->
+    undefined
+
+  assign: (lhs) ->
+    @expression = new Assign lhs, @expression
+    this
+
+  block: (body) ->
+    (new AwaitBlock this).push(body).block()
+
+#### AwaitBlock
+
+# TODO(klimt)
+exports.AwaitBlock = class AwaitBlock extends Base
+  constructor: (awaitExpression) ->
+    @promise = awaitExpression.promise
+    @continuation = Block.wrap [awaitExpression.expression]
 
   children: ['promise', 'continuation']
 
@@ -1179,7 +1203,7 @@ exports.Await = class Await extends Base
     Block.wrap([call])
 
   push: (block) ->
-    @continuation.push(block)
+    @continuation.push block
     this
 
 

@@ -71,7 +71,7 @@ grammar =
   # TODO(klimt)
   AwaitBody: [
     o 'Body',                                   -> $1
-    o 'AwaitExpression TERMINATOR AwaitBody',   -> $1.push($3).block()
+    o 'AwaitExpression TERMINATOR AwaitBody',   -> $1.block $3
     o 'Body TERMINATOR AwaitBody',              -> $1.push $3
   ]
 
@@ -108,9 +108,13 @@ grammar =
   ]
 
   # Any expression preceded by the await keyword.
+  Await: [
+    o 'AWAIT Expression',                       -> new AwaitExpression $2
+  ]
+
   AwaitExpression: [
-    o 'AWAIT Expression',                       -> new Await $2
-    o 'AwaitAssign',                            -> $1
+    o 'Await'
+    o 'AwaitAssign'
   ]
 
   # An indented block of expressions. Note that the [Rewriter](rewriter.html)
@@ -159,9 +163,9 @@ grammar =
 
   # Assignment of a variable, property, or index to a value.
   AwaitAssign: [
-    o 'Assignable = AwaitExpression',                -> $3.push(new Assign $1, new Literal('__asyncResult'))
-    # o 'Assignable = TERMINATOR AwaitExpression',     -> new Assign $1, $4
-    # o 'Assignable = INDENT AwaitExpression OUTDENT', -> new Assign $1, $4
+    o 'Assignable = AwaitExpression',                -> $3.assign $1
+    o 'Assignable = TERMINATOR AwaitExpression',     -> $4.assign $1
+    o 'Assignable = INDENT AwaitExpression OUTDENT', -> $4.assign $1
   ]
 
   # Assignment when it happens within an object literal. The difference from
