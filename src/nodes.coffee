@@ -1174,6 +1174,10 @@ exports.AwaitExpression = class AwaitExpression extends Base
     @expression = new Assign lhs, @expression
     this
 
+  op: (op, lhs) ->
+    @expression = new Op op, lhs, @expression
+    this
+
   block: (body) ->
     (new AwaitBlock this).push(body).block()
 

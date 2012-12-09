@@ -114,6 +114,7 @@ grammar =
 
   AwaitExpression: [
     o 'Await'
+    o 'AwaitOperation'
     o 'AwaitAssign'
   ]
 
@@ -574,6 +575,10 @@ grammar =
     o 'SimpleAssignable COMPOUND_ASSIGN
        INDENT Expression OUTDENT',              -> new Assign $1, $4, $2
     o 'SimpleAssignable EXTENDS Expression',    -> new Extends $1, $3
+  ]
+
+  AwaitOperation: [
+    o 'Expression MATH     AwaitExpression',    -> $3.op $2, $1
   ]
 
 

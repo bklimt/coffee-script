@@ -18,6 +18,10 @@ k = async ->
   a = b = c = await d()
   console.log a
 
+m = async ->
+  x = 3 * await y
+  console.log x
+
 #k = async ->
 #  x = 1
 #  if f()
